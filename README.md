@@ -10,20 +10,27 @@ Aist is a lightweight project management tool designed for the AI era. It bridge
 - **Job Tracking**: Track features, fixes, refactors, chores, formatting, and documentation tasks
 - **User Stories**: Convert jobs into actionable user stories with acceptance criteria
 - **Progress Logging**: Keep track of development progress
+- **Task Viewer**: Browse auto-refreshing jobs, stories, criteria, and logs in a lightweight web UI
+- **MCP Server**: Expose Aist tools directly to AI agents through Model Context Protocol
 - **AI-Native**: Built for both human developers and AI agents
 - **Native Performance**: Distributed as Native AOT binaries for fast startup and minimal dependencies
 
 ## Architecture
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────┐
-│   Aist CLI      │────▶│  Aist Backend    │────▶│  SQLite DB  │
-│  (This repo)    │     │   (REST API)     │     │  (aist/)    │
+┌─────────────────┐
+│   Aist CLI      │
+└────────┬────────┘
+         │
+┌────────▼────────┐     ┌──────────────────┐     ┌─────────────┐
+│   Aist MCP      │────▶│  Aist Backend    │────▶│  SQLite DB  │
+│   Task Viewer   │     │ REST API + UI    │     │  (aist/)    │
 └─────────────────┘     └──────────────────┘     └─────────────┘
 ```
 
 - **Aist.Cli**: Command-line interface for interacting with the system
-- **Aist.Backend**: ASP.NET Core Web API
+- **Aist.Mcp**: Model Context Protocol server for AI agent integrations
+- **Aist.Backend**: ASP.NET Core Web API and static task viewer
 - **Database**: SQLite for zero-configuration setup
 
 ## Installation
@@ -83,14 +90,15 @@ Before using the CLI, you need to run the backend server:
 
 ```bash
 # Using Docker
-docker-compose up -d
+docker compose up -d --build backend
 
 # Or run locally
 cd src/Aist.Backend
 dotnet run
 ```
 
-The backend will be available at `http://localhost:5192/api` by default.
+The backend API will be available at `http://localhost:5192/api/v1` by default.
+The task viewer will be available at `http://localhost:5192/`.
 
 ### CLI Commands
 
@@ -126,14 +134,36 @@ aist log list --story-id <id>
 aist log add --story-id <id> --text "..."
 ```
 
+### MCP Server
+
+Run the MCP server when connecting Aist to an AI agent:
+
+```bash
+dotnet run --project src/Aist.Mcp/Aist.Mcp.csproj
+```
+
+The MCP server exposes tools for projects, jobs, user stories, acceptance criteria, progress logs, and backend health checks. It uses UTF-8 input and output so Cyrillic and other non-ASCII text is preserved.
+
+Available tools:
+
+- `health_check`
+- `project_list`, `project_create`, `project_delete`
+- `job_list`, `job_get`, `job_create`, `job_update`, `job_update_status`, `job_delete`
+- `story_list_by_job`, `story_create`, `story_set_complete`
+- `criteria_list_by_story`, `criteria_create`, `criteria_set_met`
+- `log_list_by_story`, `log_add`
+
 ### Environment Variables
 
 ```bash
-# Backend URL (default: http://localhost:5192/api)
-export AIST_API_URL=http://localhost:5192/api
+# Backend URL for CLI and MCP (default: http://localhost:5192/api/v1)
+export AIST_API_URL=http://localhost:5192/api/v1
 
 # Database path for backend (relative to backend working directory)
 export ConnectionStrings__DefaultConnection="Data Source=aist/main.db"
+
+# MCP transport mode (optional: jsonl for line-delimited JSON-RPC)
+export AIST_MCP_TRANSPORT=jsonl
 ```
 
 ## Development
@@ -153,6 +183,9 @@ dotnet build src/Aist.Cli/Aist.Cli.csproj
 
 # Build Backend only
 dotnet build src/Aist.Backend/Aist.Backend.csproj
+
+# Build MCP server only
+dotnet build src/Aist.Mcp/Aist.Mcp.csproj
 ```
 
 ### Running
@@ -165,6 +198,10 @@ dotnet run
 # Run CLI
 cd src/Aist.Cli
 dotnet run -- <command>
+
+# Run MCP server
+cd src/Aist.Mcp
+dotnet run
 ```
 
 ### Publishing Native AOT
@@ -198,13 +235,17 @@ dotnet test
 
 ```bash
 # Build and run with Docker Compose
-docker-compose up -d
+docker compose up -d --build backend
 
 # View logs
-docker-compose logs -f
+docker compose logs -f backend
 
 # Stop
-docker-compose down
+docker compose down
+
+# Rebuild without cache
+docker compose build --no-cache backend
+docker compose up -d backend
 ```
 
 ## Workflow
@@ -267,9 +308,10 @@ aist job done \
 
 ## API
 
-The backend exposes a REST API. See `src/Aist.Backend/Controllers/` for endpoints.
+The backend exposes a versioned REST API. See `src/Aist.Backend/Controllers/` for endpoints.
 
-Default base URL: `http://localhost:5192`
+Default API base URL: `http://localhost:5192/api/v1`
+Health check: `http://localhost:5192/api/health`
 
 ## Contributing
 

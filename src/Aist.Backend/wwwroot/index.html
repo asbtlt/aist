@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aist Task Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar panel">
+      <div class="sidebar-head">
+        <h1>Aist</h1>
+        <p>Task Viewer</p>
+      </div>
+
+      <div class="controls">
+        <label class="control-label" for="projectSelect">Проект</label>
+        <select id="projectSelect"></select>
+
+        <label class="control-label" for="taskSearch">Поиск задач</label>
+        <input id="taskSearch" type="search" placeholder="Заголовок, slug, описание" autocomplete="off">
+
+        <label class="control-label" for="statusFilter">Статус</label>
+        <select id="statusFilter">
+          <option value="all">Все</option>
+          <option value="Todo">Todo</option>
+          <option value="InProgress">In Progress</option>
+          <option value="Done">Done</option>
+        </select>
+      </div>
+
+      <div class="jobs-head">
+        <h2>Задачи</h2>
+        <span id="jobCount">0</span>
+      </div>
+
+      <div id="jobsList" class="jobs-list"></div>
+    </aside>
+
+    <main class="content panel" id="details">
+      <div class="empty-state">Выберите задачу слева, чтобы увидеть историю и логи.</div>
+    </main>
+  </div>
+
+  <template id="taskTemplate">
+    <article class="task-shell">
+      <header class="task-header">
+        <div>
+          <h2 class="task-title"></h2>
+          <div class="meta-row">
+            <span class="pill slug"></span>
+            <span class="pill type"></span>
+            <span class="pill status"></span>
+          </div>
+        </div>
+        <div class="date-block">
+          <span>Создано</span>
+          <strong class="created"></strong>
+        </div>
+      </header>
+
+      <section class="section-card task-description-wrap">
+        <div class="section-topline">Описание</div>
+        <p class="task-description"></p>
+      </section>
+
+      <section class="section-card">
+        <div class="section-head">
+          <h3>User Stories</h3>
+          <div class="section-head-right">
+            <span class="story-progress"></span>
+            <span class="story-count"></span>
+          </div>
+        </div>
+        <div class="stories"></div>
+      </section>
+    </article>
+  </template>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
