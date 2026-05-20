@@ -101,4 +101,27 @@ public sealed class UserStoriesController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateStory(Guid id, UpdateUserStoryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var story = await _context.UserStories.FindAsync(id).ConfigureAwait(false);
+
+        if (story == null)
+        {
+            return NotFound();
+        }
+
+        story.Title = request.Title;
+        story.Who = request.Who;
+        story.What = request.What;
+        story.Why = request.Why;
+        story.Priority = request.Priority;
+
+        await _context.SaveChangesAsync().ConfigureAwait(false);
+
+        return NoContent();
+    }
 }

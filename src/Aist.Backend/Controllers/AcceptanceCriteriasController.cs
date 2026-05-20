@@ -72,4 +72,24 @@ public sealed class AcceptanceCriteriasController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateAcceptanceCriteriaDetails(Guid id, UpdateAcceptanceCriteriaDetailsRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var criteria = await _context.AcceptanceCriterias.FindAsync(id).ConfigureAwait(false);
+
+        if (criteria == null)
+        {
+            return NotFound();
+        }
+
+        criteria.Description = request.Description;
+        criteria.IsMet = request.IsMet;
+
+        await _context.SaveChangesAsync().ConfigureAwait(false);
+
+        return NoContent();
+    }
 }

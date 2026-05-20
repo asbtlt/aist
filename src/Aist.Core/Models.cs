@@ -16,3 +16,9 @@ public enum JobType
     Fmt,
     Doc
 }
+
+public enum StoryStatus
+{
+    Todo,
+    Done
+}

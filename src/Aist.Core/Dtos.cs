@@ -56,9 +56,17 @@ public record CreateUserStoryRequest(
 
 public record UpdateUserStoryCompleteRequest(bool IsComplete);
 
+public record UpdateUserStoryRequest(
+    string Title,
+    string Who,
+    string What,
+    string Why,
+    int Priority);
+
 public record AcceptanceCriteriaResponse(Guid Id, Guid UserStoryId, string Description, bool IsMet);
 public record CreateAcceptanceCriteriaRequest(Guid UserStoryId, string Description);
 public record UpdateAcceptanceCriteriaRequest(bool IsMet);
+public record UpdateAcceptanceCriteriaDetailsRequest(string Description, bool IsMet);
 
 public record ProgressLogResponse(Guid Id, Guid UserStoryId, string Text, DateTime CreatedAt);
 public record CreateProgressLogRequest(Guid UserStoryId, string Text);

@@ -165,16 +165,16 @@ internal sealed class McpServer
                     Req("projectId", "string", "Project GUID."),
                     Req("shortSlug", "string", "Short slug."),
                     Req("title", "string", "Job title."),
-                    Req("type", "string", "Feature|Fix|Refactor|Chore|Fmt|Doc."),
+                    ReqEnum("type", "Job type.", nameof(JobType.Feature), nameof(JobType.Fix), nameof(JobType.Refactor), nameof(JobType.Chore), nameof(JobType.Fmt), nameof(JobType.Doc)),
                     Req("description", "string", "Job description.")), "projectId", "shortSlug", "title", "type", "description"),
                 Tool("job_update_status", "Update job status.", Obj(
                     Req("jobId", "string", "Job GUID."),
-                    Req("status", "string", "Todo|InProgress|Done.")), "jobId", "status"),
+                    ReqEnum("status", "Job status.", nameof(JobStatus.Todo), nameof(JobStatus.InProgress), nameof(JobStatus.Done))), "jobId", "status"),
                 Tool("job_update", "Update job fields.", Obj(
                     Req("jobId", "string", "Job GUID."),
                     Req("shortSlug", "string", "Short slug."),
                     Req("title", "string", "Job title."),
-                    Req("type", "string", "Feature|Fix|Refactor|Chore|Fmt|Doc."),
+                    ReqEnum("type", "Job type.", nameof(JobType.Feature), nameof(JobType.Fix), nameof(JobType.Refactor), nameof(JobType.Chore), nameof(JobType.Fmt), nameof(JobType.Doc)),
                     Req("description", "string", "Job description.")), "jobId", "shortSlug", "title", "type", "description"),
                 Tool("job_delete", "Soft-delete job.", Obj(
                     Req("jobId", "string", "Job GUID.")), "jobId"),
@@ -191,6 +191,16 @@ internal sealed class McpServer
                 Tool("story_set_complete", "Set story completion status.", Obj(
                     Req("storyId", "string", "Story GUID."),
                     Req("isComplete", "boolean", "Completion flag.")), "storyId", "isComplete"),
+                Tool("story_update_status", "Update story status.", Obj(
+                    Req("storyId", "string", "Story GUID."),
+                    ReqEnum("status", "Story status.", nameof(StoryStatus.Todo), nameof(StoryStatus.Done))), "storyId", "status"),
+                Tool("story_update", "Update story fields.", Obj(
+                    Req("storyId", "string", "Story GUID."),
+                    Req("title", "string", "Story title."),
+                    Req("who", "string", "As a..."),
+                    Req("what", "string", "I want..."),
+                    Req("why", "string", "So that..."),
+                    Req("priority", "integer", "Story priority.")), "storyId", "title", "who", "what", "why", "priority"),
 
                 Tool("criteria_list_by_story", "List criteria by story.", Obj(
                     Req("storyId", "string", "Story GUID.")), "storyId"),
@@ -200,6 +210,13 @@ internal sealed class McpServer
                 Tool("criteria_set_met", "Set acceptance criteria status.", Obj(
                     Req("criteriaId", "string", "Criteria GUID."),
                     Req("isMet", "boolean", "Met flag.")), "criteriaId", "isMet"),
+                Tool("criteria_check", "Alias for criteria_set_met.", Obj(
+                    Req("criteriaId", "string", "Criteria GUID."),
+                    Req("isMet", "boolean", "Met flag.")), "criteriaId", "isMet"),
+                Tool("criteria_update", "Update acceptance criteria fields.", Obj(
+                    Req("criteriaId", "string", "Criteria GUID."),
+                    Req("description", "string", "Criteria text."),
+                    Req("isMet", "boolean", "Met flag.")), "criteriaId", "description", "isMet"),
 
                 Tool("log_list_by_story", "List progress logs by story.", Obj(
                     Req("storyId", "string", "Story GUID.")), "storyId"),
@@ -254,14 +271,30 @@ internal sealed class McpServer
             "story_set_complete" => await ExecuteNoResultAsync(() => _apiClient.SetStoryCompleteAsync(
                 GetRequiredString(args, "storyId"),
                 GetRequiredBool(args, "isComplete"))).ConfigureAwait(false),
+            "story_update_status" => await ExecuteNoResultAsync(() => _apiClient.SetStoryCompleteAsync(
+                GetRequiredString(args, "storyId"),
+                ParseStoryStatus(GetRequiredString(args, "status")) == StoryStatus.Done)).ConfigureAwait(false),
+            "story_update" => await ExecuteNoResultAsync(() => _apiClient.UpdateStoryAsync(
+                GetRequiredString(args, "storyId"),
+                new UpdateUserStoryRequest(
+                    GetRequiredString(args, "title"),
+                    GetRequiredString(args, "who"),
+                    GetRequiredString(args, "what"),
+                    GetRequiredString(args, "why"),
+                    GetRequiredInt(args, "priority")))).ConfigureAwait(false),
 
             "criteria_list_by_story" => await _apiClient.GetCriteriaByStoryAsync(GetRequiredString(args, "storyId")).ConfigureAwait(false),
             "criteria_create" => await _apiClient.CreateCriteriaAsync(new CreateAcceptanceCriteriaRequest(
                 ParseGuid(GetRequiredString(args, "storyId"), "storyId"),
                 GetRequiredString(args, "description"))).ConfigureAwait(false),
-            "criteria_set_met" => await ExecuteNoResultAsync(() => _apiClient.SetCriteriaAsync(
+            "criteria_set_met" or "criteria_check" => await ExecuteNoResultAsync(() => _apiClient.SetCriteriaAsync(
                 GetRequiredString(args, "criteriaId"),
                 GetRequiredBool(args, "isMet"))).ConfigureAwait(false),
+            "criteria_update" => await ExecuteNoResultAsync(() => _apiClient.UpdateCriteriaAsync(
+                GetRequiredString(args, "criteriaId"),
+                new UpdateAcceptanceCriteriaDetailsRequest(
+                    GetRequiredString(args, "description"),
+                    GetRequiredBool(args, "isMet")))).ConfigureAwait(false),
 
             "log_list_by_story" => await _apiClient.GetLogsByStoryAsync(GetRequiredString(args, "storyId")).ConfigureAwait(false),
             "log_add" => await _apiClient.AddLogAsync(new CreateProgressLogRequest(
@@ -403,6 +436,15 @@ internal sealed class McpServer
         throw new InvalidOperationException("type must be one of: Feature, Fix, Refactor, Chore, Fmt, Doc.");
     }
 
+    private static StoryStatus ParseStoryStatus(string value)
+    {
+        if (Enum.TryParse<StoryStatus>(value, true, out var parsed))
+        {
+            return parsed;
+        }
+        throw new InvalidOperationException("status must be one of: Todo, Done.");
+    }
+
     private static JsonObject Tool(string name, string description, JsonObject inputSchema, params string[] required)
     {
         if (required.Length > 0)
@@ -438,6 +480,14 @@ internal sealed class McpServer
         {
             ["type"] = type,
             ["description"] = description
+        });
+
+    private static KeyValuePair<string, JsonNode?> ReqEnum(string name, string description, params string[] values)
+        => new(name, new JsonObject
+        {
+            ["type"] = "string",
+            ["description"] = description,
+            ["enum"] = new JsonArray(values.Select(static item => JsonValue.Create(item)).ToArray())
         });
 
     private static KeyValuePair<string, JsonNode?> Opt(string name, string type, string description)

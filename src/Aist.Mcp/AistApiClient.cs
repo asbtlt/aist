@@ -111,6 +111,12 @@ internal sealed class AistApiClient : IDisposable
         await EnsureSuccessAsync(response).ConfigureAwait(false);
     }
 
+    public async Task UpdateStoryAsync(string storyId, UpdateUserStoryRequest request)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"userstories/{storyId}", request, AistJsonContext.Default.UpdateUserStoryRequest).ConfigureAwait(false);
+        await EnsureSuccessAsync(response).ConfigureAwait(false);
+    }
+
     public async Task<List<AcceptanceCriteriaResponse>?> GetCriteriaByStoryAsync(string storyId) =>
         await _httpClient.GetFromJsonAsync($"acceptancecriterias/by-story/{storyId}", AistJsonContext.Default.ListAcceptanceCriteriaResponse).ConfigureAwait(false);
 
@@ -124,6 +130,12 @@ internal sealed class AistApiClient : IDisposable
     public async Task SetCriteriaAsync(string criteriaId, bool isMet)
     {
         var response = await _httpClient.PatchAsJsonAsync($"acceptancecriterias/{criteriaId}", new UpdateAcceptanceCriteriaRequest(isMet), AistJsonContext.Default.UpdateAcceptanceCriteriaRequest).ConfigureAwait(false);
+        await EnsureSuccessAsync(response).ConfigureAwait(false);
+    }
+
+    public async Task UpdateCriteriaAsync(string criteriaId, UpdateAcceptanceCriteriaDetailsRequest request)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"acceptancecriterias/{criteriaId}", request, AistJsonContext.Default.UpdateAcceptanceCriteriaDetailsRequest).ConfigureAwait(false);
         await EnsureSuccessAsync(response).ConfigureAwait(false);
     }
 
